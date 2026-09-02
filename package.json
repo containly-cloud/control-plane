@@ -1,0 +1,6 @@
+{
+  "name": "control-plane",
+  "workspaces": [
+    "ui/*"
+  ]
+}
