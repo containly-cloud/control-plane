@@ -36,4 +36,9 @@ export default defineConfig({
       index: './src/main.tsx',
     },
   },
+  server: {
+    proxy: {
+      '/api': 'http://localhost:8888',
+    },
+  },
 });

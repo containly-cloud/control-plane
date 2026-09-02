@@ -5,11 +5,12 @@
     "ui/*"
   ],
   "scripts": {
+    "start": "./dist/api",
     "dev": "concurrently 'bun run --cwd ui dev' 'go run api'",
-    "prebuild:api:prod": "rm -rf api/pkg/web/dist",
-    "build:api:prod": "cp -r ui/dist api/pkg/web/dist && go build -tags=prod -o dist/api api",
-    "build:ui:prod": "bun run --cwd ui build",
-    "build:prod": "bun run build:ui:prod && bun run build:api:prod"
+    "prebuild:api": "rm -rf api/internal/web/dist",
+    "build:api": "cp -r ui/dist api/internal/web/dist && go build -tags=prod -o dist/api api",
+    "build:ui": "bun run --cwd ui build",
+    "build": "bun run build:ui && bun run build:api"
   },
   "devDependencies": {
     "concurrently": "^10.0.5"

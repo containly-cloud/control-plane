@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "rsbuild build",
+    "type-check": "tsc --noEmit",
     "check": "biome check --write",
     "lint": "biome check",
     "dev": "rsbuild",
@@ -12,10 +13,14 @@
   "dependencies": {
     "@heroui/react": "^3.2.4",
     "@heroui/styles": "^3.2.4",
+    "@tanstack/react-query": "^5.102.8",
     "@tanstack/react-router": "^1.170.32",
     "@tanstack/react-router-devtools": "^1.167.1",
+    "i18next": "^26.4.1",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "react-i18next": "^17.0.13",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.8",

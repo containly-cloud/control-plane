@@ -1,0 +1,4 @@
+ALTER TABLE users ADD COLUMN active INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE users ADD COLUMN password_temporary INTEGER NOT NULL DEFAULT 0;
+
+CREATE INDEX users_by_active ON users(active);
