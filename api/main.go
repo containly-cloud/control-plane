@@ -14,6 +14,7 @@ func main() {
 	router := chi.NewMux()
 	humachi.New(router, huma.DefaultConfig("Control Plane API", "1.0.0"))
 
+	// Ignore OpenAPI
 	router.Handle("/*", web.HandleWeb())
 
 	http.ListenAndServe(":8888", router)

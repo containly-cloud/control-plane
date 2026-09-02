@@ -5,9 +5,13 @@
     "ui/*"
   ],
   "scripts": {
+    "dev": "concurrently 'bun run --cwd ui dev' 'go run api'",
     "prebuild:api:prod": "rm -rf api/pkg/web/dist",
     "build:api:prod": "cp -r ui/dist api/pkg/web/dist && go build -tags=prod -o dist/api api",
     "build:ui:prod": "bun run --cwd ui build",
     "build:prod": "bun run build:ui:prod && bun run build:api:prod"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
   }
 }
