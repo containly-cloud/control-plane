@@ -1,6 +1,13 @@
 {
   "name": "control-plane",
+  "version": "1.0.0",
   "workspaces": [
     "ui/*"
-  ]
+  ],
+  "scripts": {
+    "prebuild:api:prod": "rm -rf api/pkg/web/dist",
+    "build:api:prod": "cp -r ui/dist api/pkg/web/dist && go build -tags=prod -o dist/api api",
+    "build:ui:prod": "bun run --cwd ui build",
+    "build:prod": "bun run build:ui:prod && bun run build:api:prod"
+  }
 }
