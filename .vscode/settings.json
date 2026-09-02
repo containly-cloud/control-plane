@@ -36,6 +36,10 @@
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "biomejs.biome"
   },
+  "[css]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "biomejs.biome"
+  },
   "biome.enabled": true,
   "biome.lsp.bin": "./ui/node_modules/.bin/biome",
   "biome.configurationPath": "./ui/biome.json",
