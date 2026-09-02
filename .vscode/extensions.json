@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "swellaby.workspace-config-plus",
+    "golang.go",
+    "biomejs.biome",
+    "EditorConfig.EditorConfig"
+  ]
+}
