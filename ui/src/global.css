@@ -1,1 +1,205 @@
 @import "tailwindcss";
+@import "@heroui/styles";
+
+:root {
+  --brand-gradient: linear-gradient(
+    135deg,
+    oklch(74% 0.149 231) 0%,
+    oklch(61% 0.197 255) 35%,
+    oklch(49.7% 0.261 264) 65%,
+    oklch(52.7% 0.262 291) 100%
+  );
+}
+
+/*
+ * Containly Cloud — HeroUI Theme
+ *
+ * Brand palette extracted from the Containly identity:
+ * Cyan   → Blue → Indigo → Violet
+ */
+
+:root,
+.light,
+.default,
+[data-theme="light"],
+[data-theme="default"] {
+  /*
+   * Brand
+   */
+  --brand-cyan: oklch(74% 0.149 231);
+  --brand-blue: oklch(61% 0.197 255);
+  --brand-indigo: oklch(49.7% 0.261 264);
+  --brand-violet: oklch(52.7% 0.262 291);
+
+  /*
+   * Theme Colors
+   */
+
+  /* Primary */
+  --accent: oklch(58.5% 0.22 258);
+  --accent-foreground: oklch(100% 0 0);
+  --focus: oklch(61% 0.197 255);
+
+  /* App */
+  --background: oklch(97.7% 0.008 255);
+  --foreground: oklch(20% 0.035 264);
+
+  /* Borders */
+  --border: oklch(89% 0.018 255);
+  --separator: oklch(92.5% 0.012 255);
+
+  /* Neutral / default */
+  --default: oklch(94.5% 0.012 255);
+  --default-foreground: oklch(22% 0.035 264);
+
+  /* Fields */
+  --field-background: oklch(100% 0.004 255);
+  --field-border: transparent;
+  --field-foreground: oklch(20% 0.035 264);
+  --field-placeholder: oklch(55% 0.025 255);
+
+  /* Text */
+  --muted: oklch(52% 0.025 255);
+
+  /* Surfaces */
+  --surface: oklch(100% 0.004 255);
+  --surface-foreground: oklch(20% 0.035 264);
+
+  --surface-secondary: oklch(96% 0.009 255);
+  --surface-secondary-foreground: oklch(20% 0.035 264);
+
+  --surface-tertiary: oklch(93.5% 0.014 255);
+  --surface-tertiary-foreground: oklch(20% 0.035 264);
+
+  /* Overlays */
+  --overlay: oklch(100% 0.004 255);
+  --overlay-foreground: oklch(20% 0.035 264);
+
+  /* Segments */
+  --segment: oklch(100% 0.004 255);
+  --segment-foreground: oklch(20% 0.035 264);
+
+  /* Scrollbar */
+  --scrollbar: oklch(82% 0.018 255);
+
+  /*
+   * Semantic
+   */
+  --success: oklch(67% 0.175 151);
+  --success-foreground: oklch(18% 0.04 151);
+
+  --warning: oklch(78% 0.155 76);
+  --warning-foreground: oklch(22% 0.05 72);
+
+  --danger: oklch(62% 0.225 25);
+  --danger-foreground: oklch(100% 0 0);
+
+  /*
+   * Shape
+   */
+  --radius: 0.5rem;
+  --field-radius: 0.75rem;
+
+  /*
+   * Typography
+   */
+  --font-sans: var(--font-inter);
+}
+
+.dark,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /*
+   * Brand
+   */
+  --brand-cyan: oklch(74% 0.149 231);
+  --brand-blue: oklch(61% 0.197 255);
+  --brand-indigo: oklch(49.7% 0.261 264);
+  --brand-violet: oklch(52.7% 0.262 291);
+
+  /*
+   * Primary
+   *
+   * Slightly brighter in dark mode so actions retain
+   * the luminous blue identity of the logo.
+   */
+  --accent: oklch(65% 0.195 253);
+  --accent-foreground: oklch(100% 0 0);
+  --focus: oklch(74% 0.149 231);
+
+  /*
+   * App
+   *
+   * Notice these are dark NAVY colors rather than
+   * achromatic black/gray.
+   */
+  --background: oklch(11.5% 0.03 264);
+  --foreground: oklch(96.5% 0.01 255);
+
+  /*
+   * Borders
+   */
+  --border: oklch(27% 0.04 264);
+  --separator: oklch(23% 0.035 264);
+
+  /*
+   * Neutral / default
+   */
+  --default: oklch(23% 0.04 264);
+  --default-foreground: oklch(95% 0.01 255);
+
+  /*
+   * Fields
+   */
+  --field-background: oklch(17.5% 0.035 264);
+  --field-border: transparent;
+  --field-foreground: oklch(96% 0.01 255);
+  --field-placeholder: oklch(66% 0.025 255);
+
+  /*
+   * Text
+   */
+  --muted: oklch(68% 0.025 255);
+
+  /*
+   * Surfaces
+   */
+  --surface: oklch(16% 0.035 264);
+  --surface-foreground: oklch(96.5% 0.01 255);
+
+  --surface-secondary: oklch(19.5% 0.04 264);
+  --surface-secondary-foreground: oklch(96% 0.01 255);
+
+  --surface-tertiary: oklch(22% 0.045 264);
+  --surface-tertiary-foreground: oklch(96% 0.01 255);
+
+  /*
+   * Overlays
+   */
+  --overlay: oklch(17% 0.04 264);
+  --overlay-foreground: oklch(96.5% 0.01 255);
+
+  /*
+   * Segments
+   */
+  --segment: oklch(25% 0.05 264);
+  --segment-foreground: oklch(97% 0.008 255);
+
+  /*
+   * Scrollbar
+   */
+  --scrollbar: oklch(38% 0.045 264);
+
+  /*
+   * Semantic
+   */
+  --success: oklch(72% 0.17 151);
+  --success-foreground: oklch(16% 0.04 151);
+
+  --warning: oklch(81% 0.145 76);
+  --warning-foreground: oklch(19% 0.05 72);
+
+  --danger: oklch(65% 0.215 25);
+  --danger-foreground: oklch(100% 0 0);
+}

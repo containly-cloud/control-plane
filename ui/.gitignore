@@ -17,3 +17,6 @@ dist/
 # Tanstack Router
 **/routeTree.gen.ts
 .tanstack
+
+# heroui-agents-md
+.heroui-docs/
