@@ -57,7 +57,21 @@
     "publicIp": "IP público",
     "networkInterfaces": "Interfaces",
     "updatedAt": "Atualizado em {{date}}",
-    "notAvailable": "Indisponível"
+    "notAvailable": "Indisponível",
+    "historyTitle": "Histórico de métricas",
+    "historyDescription": "Compare o uso de CPU e memória no período selecionado.",
+    "historyFrom": "De",
+    "historyTo": "Até",
+    "historyApply": "Aplicar período",
+    "historyRangeInvalid": "Escolha uma data final igual ou posterior à data inicial.",
+    "historyLoading": "Carregando histórico de métricas…",
+    "historyUnavailable": "Não foi possível carregar o histórico de métricas.",
+    "historyEmpty": "Não houve métricas coletadas neste período.",
+    "historyChartLabel": "Uso de CPU e memória no período selecionado",
+    "historyGranularity": "Granularidade do gráfico",
+    "historyGranularitySecond": "A cada segundo",
+    "historyGranularityMinute": "A cada minuto",
+    "historyGranularityHour": "A cada hora"
   },
   "workspace": {
     "navigationLabel": "Navegação principal"
@@ -68,8 +82,6 @@
     "monitoringTitle": "Monitoramento do sistema",
     "monitoringDescription": "A coleta pode ser desligada e ligada novamente sem reiniciar o servidor.",
     "monitoringEnabled": "Coletar e armazenar métricas do sistema",
-    "intervalLabel": "Intervalo de coleta (segundos)",
-    "intervalValidation": "Use um intervalo entre 5 e 86.400 segundos.",
     "retentionLabel": "Retenção de métricas (dias)",
     "retentionValidation": "Use uma retenção entre 1 e 3.650 dias.",
     "storageNotice": "Desligar a coleta interrompe novos registros de métricas e ajuda a limitar o uso de armazenamento do banco de dados.",

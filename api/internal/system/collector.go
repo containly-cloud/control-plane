@@ -26,12 +26,12 @@ import (
 
 // Overview is the current host state exposed to authenticated clients.
 type Overview struct {
-	CapturedAt time.Time       `json:"capturedAt"`
-	Machine    Machine         `json:"machine"`
-	CPU        CPU             `json:"cpu"`
-	Memory     Memory          `json:"memory"`
-	Storage    Storage         `json:"storage"`
-	Network    Network         `json:"network"`
+	CapturedAt time.Time `json:"capturedAt"`
+	Machine    Machine   `json:"machine"`
+	CPU        CPU       `json:"cpu"`
+	Memory     Memory    `json:"memory"`
+	Storage    Storage   `json:"storage"`
+	Network    Network   `json:"network"`
 }
 
 type Machine struct {
@@ -53,9 +53,9 @@ type Memory struct {
 }
 
 type Storage struct {
-	TotalBytes           uint64 `json:"totalBytes"`
-	UsedBytes            uint64 `json:"usedBytes"`
-	AvailableBytes       uint64 `json:"availableBytes"`
+	TotalBytes            uint64 `json:"totalBytes"`
+	UsedBytes             uint64 `json:"usedBytes"`
+	AvailableBytes        uint64 `json:"availableBytes"`
 	ControlPlaneUsedBytes uint64 `json:"controlPlaneUsedBytes"`
 }
 
@@ -67,6 +67,15 @@ type Network struct {
 type Interface struct {
 	Name      string   `json:"name"`
 	Addresses []string `json:"addresses"`
+}
+
+// MetricSample is a persisted CPU and memory measurement for historical
+// charts. Missing capture times are intentionally not synthesized.
+type MetricSample struct {
+	CapturedAt       time.Time `json:"capturedAt"`
+	CPUUsagePercent  float64   `json:"cpuUsagePercent"`
+	MemoryTotalBytes uint64    `json:"memoryTotalBytes"`
+	MemoryUsedBytes  uint64    `json:"memoryUsedBytes"`
 }
 
 // Collector keeps only the previous CPU counters and a cached public address.
@@ -88,7 +97,7 @@ type cpuCounters struct {
 
 func NewCollector(paths config.Paths) *Collector {
 	return &Collector{
-		paths: paths,
+		paths:  paths,
 		client: &http.Client{Timeout: 2 * time.Second},
 	}
 }

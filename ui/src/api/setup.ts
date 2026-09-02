@@ -42,9 +42,20 @@ const systemOverviewSchema = z.object({
     }),
   }),
 });
+const systemMetricsHistorySchema = z.object({
+  granularity: z.enum(['second', 'minute', 'hour']),
+  oldestAvailableAt: z.string().datetime().nullable().optional(),
+  metrics: z.array(
+    z.object({
+      capturedAt: z.string(),
+      cpuUsagePercent: z.number().min(0).max(100),
+      memoryTotalBytes: z.number().nonnegative(),
+      memoryUsedBytes: z.number().nonnegative(),
+    }),
+  ),
+});
 const monitoringSettingsSchema = z.object({
   enabled: z.boolean(),
-  intervalSeconds: z.number().int().min(5).max(86400),
   retentionDays: z.number().int().min(1).max(3650),
   savedMetricsBytes: z.number().nonnegative(),
 });
@@ -106,10 +117,11 @@ export type RootAccountInput = {
 export type LoginInput = RootAccountInput;
 export type Session = z.infer<typeof sessionSchema>;
 export type SystemOverview = z.infer<typeof systemOverviewSchema>;
+export type SystemMetricsHistory = z.infer<typeof systemMetricsHistorySchema>;
 export type MonitoringSettings = z.infer<typeof monitoringSettingsSchema>;
 export type MonitoringSettingsUpdate = Pick<
   MonitoringSettings,
-  'enabled' | 'intervalSeconds' | 'retentionDays'
+  'enabled' | 'retentionDays'
 > & { clearSavedMetrics?: boolean };
 export type ActiveSessions = z.infer<typeof activeSessionsSchema>;
 export type Backups = z.infer<typeof backupsSchema>;
@@ -213,6 +225,20 @@ export async function getSystemOverview(
     throw await parseError(response);
   }
   return systemOverviewSchema.parse(await response.json());
+}
+
+export async function getSystemMetricsHistory(
+  from: string,
+  to: string,
+  granularity: SystemMetricsHistory['granularity'],
+  locale: Locale,
+): Promise<SystemMetricsHistory> {
+  const query = new URLSearchParams({ from, to, granularity });
+  const response = await fetch(`/api/v1/system/metrics?${query}`, {
+    headers: { 'Accept-Language': locale },
+  });
+  if (!response.ok) throw await parseError(response);
+  return systemMetricsHistorySchema.parse(await response.json());
 }
 
 export async function getMonitoringSettings(

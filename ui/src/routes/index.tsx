@@ -16,6 +16,7 @@ import {
   TextField,
   Toast,
 } from '@heroui/react';
+import { useForm } from '@tanstack/react-form';
 import {
   type UseQueryResult,
   useMutation,
@@ -23,7 +24,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useLayoutEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
@@ -41,6 +42,7 @@ import {
   getMonitoringSettings,
   getSession,
   getSetupStatus,
+  getSystemMetricsHistory,
   getSystemOverview,
   type LoginInput,
   login,
@@ -51,6 +53,7 @@ import {
   type RootAccountInput,
   resetControlUserPassword,
   type Session,
+  type SystemMetricsHistory,
   type SystemOverview,
   updateControlUserPermissions,
   updateMonitoringSettings,
@@ -68,6 +71,17 @@ const languageSelectTriggerClassName =
   'min-h-8 rounded-md border border-[oklch(45%_0.05_264)] bg-[oklch(18%_0.04_264)] px-2 text-[oklch(96%_0.01_255)] hover:!border-[oklch(60%_0.08_264)] hover:!bg-[oklch(23%_0.045_264)] data-[hovered=true]:!border-[oklch(60%_0.08_264)] data-[hovered=true]:!bg-[oklch(23%_0.045_264)] [&_.select__indicator]:!text-[oklch(89%_0.018_255)]';
 const languageOptionClassName =
   '!text-[oklch(96%_0.01_255)] hover:!bg-[oklch(28%_0.05_264)] data-[hovered=true]:!bg-[oklch(28%_0.05_264)] data-[selected=true]:!bg-[oklch(35%_0.07_264)] aria-selected:!bg-[oklch(35%_0.07_264)] [&_[data-slot=list-box-item-indicator]]:!text-[oklch(96%_0.01_255)]';
+const monitoringSettingsFormSchema = z.object({
+  enabled: z.boolean(),
+  retentionDays: z.number().int().min(1).max(3650),
+});
+const metricsHistoryFormSchema = z
+  .object({
+    from: z.string().min(1),
+    to: z.string().min(1),
+    granularity: z.enum(['second', 'minute', 'hour']),
+  })
+  .refine((value) => new Date(value.from) < new Date(value.to));
 
 function WelcomePage() {
   const { i18n, t } = useTranslation();
@@ -534,7 +548,7 @@ function Workspace({
             {systemQuery.data ? (
               <SystemOverviewPanel
                 overview={systemQuery.data}
-                locale={i18n.language}
+                locale={locale}
               />
             ) : null}
           </>
@@ -792,7 +806,7 @@ function SettingsPanel({
         <MonitoringSettingsForm
           isPending={update.isPending}
           isClearing={clear.isPending}
-          key={`${query.data.enabled}-${query.data.intervalSeconds}-${query.data.retentionDays}-${query.data.savedMetricsBytes}`}
+          key={`${query.data.enabled}-${query.data.retentionDays}-${query.data.savedMetricsBytes}`}
           locale={locale}
           onSave={(settings) => update.mutate(settings)}
           onClear={() => clear.mutateAsync()}
@@ -819,29 +833,26 @@ function MonitoringSettingsForm({
   settings: MonitoringSettings;
 }) {
   const { t } = useTranslation();
-  const [enabled, setEnabled] = useState(settings.enabled);
-  const [intervalSeconds, setIntervalSeconds] = useState(
-    String(settings.intervalSeconds),
-  );
-  const [retentionDays, setRetentionDays] = useState(
-    String(settings.retentionDays),
-  );
   const [isClearDialogOpen, setClearDialogOpen] = useState(false);
   const [clearIntent, setClearIntent] = useState<'disable' | 'manual' | null>(
     null,
   );
   const [clearConfirmation, setClearConfirmation] = useState('');
-  const interval = Number(intervalSeconds);
-  const retention = Number(retentionDays);
-  const isValidInterval =
-    Number.isInteger(interval) && interval >= 5 && interval <= 86400;
-  const isValidRetention =
-    Number.isInteger(retention) && retention >= 1 && retention <= 3650;
-  const nextSettings = (): MonitoringSettingsUpdate => ({
-    enabled,
-    intervalSeconds: interval,
-    retentionDays: retention,
+  const form = useForm({
+    defaultValues: {
+      enabled: settings.enabled,
+      retentionDays: settings.retentionDays,
+    },
+    validators: { onChange: monitoringSettingsFormSchema },
+    onSubmit: ({ value }) => {
+      if (settings.enabled && !value.enabled) {
+        openClearConfirmation('disable');
+        return;
+      }
+      onSave(value);
+    },
   });
+  const nextSettings = (): MonitoringSettingsUpdate => form.state.values;
   const clearPhrase = t('settings.clearMetricsAcknowledgementPhrase');
   const canClear = clearConfirmation === clearPhrase;
   const openClearConfirmation = (intent: 'disable' | 'manual') => {
@@ -863,62 +874,65 @@ function MonitoringSettingsForm({
           className="grid gap-5"
           onSubmit={(event) => {
             event.preventDefault();
-            if (!isValidInterval || !isValidRetention) return;
-            if (settings.enabled && !enabled) {
-              openClearConfirmation('disable');
-              return;
-            }
-            onSave(nextSettings());
+            void form.handleSubmit();
           }}
         >
-          <Checkbox isSelected={enabled} onChange={setEnabled}>
-            <Checkbox.Content>
-              <Checkbox.Control>
-                <Checkbox.Indicator />
-              </Checkbox.Control>
-              <Label>{t('settings.monitoringEnabled')}</Label>
-            </Checkbox.Content>
-          </Checkbox>
-          <TextField
-            fullWidth
-            isDisabled={!enabled}
-            isInvalid={!isValidInterval}
-          >
-            <Label>{t('settings.intervalLabel')}</Label>
-            <Input
-              max={86400}
-              min={5}
-              onChange={(event) => setIntervalSeconds(event.target.value)}
-              type="number"
-              value={intervalSeconds}
-            />
-            <FieldError>{t('settings.intervalValidation')}</FieldError>
-          </TextField>
-          <TextField
-            fullWidth
-            isDisabled={!enabled}
-            isInvalid={!isValidRetention}
-          >
-            <Label>{t('settings.retentionLabel')}</Label>
-            <Input
-              max={3650}
-              min={1}
-              onChange={(event) => setRetentionDays(event.target.value)}
-              type="number"
-              value={retentionDays}
-            />
-            <FieldError>{t('settings.retentionValidation')}</FieldError>
-          </TextField>
+          <form.Field name="enabled">
+            {(field) => (
+              <Checkbox
+                isSelected={field.state.value}
+                onChange={field.handleChange}
+              >
+                <Checkbox.Content>
+                  <Checkbox.Control>
+                    <Checkbox.Indicator />
+                  </Checkbox.Control>
+                  <Label>{t('settings.monitoringEnabled')}</Label>
+                </Checkbox.Content>
+              </Checkbox>
+            )}
+          </form.Field>
+          <form.Subscribe selector={(state) => state.values.enabled}>
+            {(enabled) => (
+              <form.Field name="retentionDays">
+                {(field) => (
+                  <TextField
+                    fullWidth
+                    isDisabled={!enabled}
+                    isInvalid={field.state.meta.errors.length > 0}
+                  >
+                    <Label>{t('settings.retentionLabel')}</Label>
+                    <Input
+                      max={3650}
+                      min={1}
+                      onChange={(event) =>
+                        field.handleChange(Number(event.target.value))
+                      }
+                      type="number"
+                      value={String(field.state.value)}
+                    />
+                    <FieldError>{t('settings.retentionValidation')}</FieldError>
+                  </TextField>
+                )}
+              </form.Field>
+            )}
+          </form.Subscribe>
           <p className="m-0 text-sm leading-6 text-[var(--muted)]">
             {t('settings.storageNotice')}
           </p>
-          <Button
-            isDisabled={!isValidInterval || !isValidRetention}
-            isPending={isPending}
-            type="submit"
+          <form.Subscribe
+            selector={(state) => [state.canSubmit, state.isDirty]}
           >
-            {t('settings.save')}
-          </Button>
+            {([canSubmit, isDirty]) => (
+              <Button
+                isDisabled={!canSubmit || !isDirty}
+                isPending={isPending}
+                type="submit"
+              >
+                {t('settings.save')}
+              </Button>
+            )}
+          </form.Subscribe>
           <Button
             isDisabled={settings.savedMetricsBytes === 0}
             isPending={isClearing}
@@ -1554,12 +1568,82 @@ function SystemOverviewPanel({
   locale,
   overview,
 }: {
-  locale: string;
+  locale: Locale;
   overview: SystemOverview;
 }) {
   const { t } = useTranslation();
   const { system } = overview;
   const usage = (value: number) => `${value.toFixed(1)}%`;
+  const [historyDefaultValues] = useState(() => {
+    const to = new Date();
+    return {
+      from: dateTimeLocalValue(daysAgo(6)),
+      to: dateTimeLocalValue(to),
+      granularity: 'minute' as SystemMetricsHistory['granularity'],
+    };
+  });
+  const [range, setRange] = useState<{
+    from: string;
+    to: string;
+    granularity: SystemMetricsHistory['granularity'];
+  }>(() => ({
+    from: new Date(historyDefaultValues.from).toISOString(),
+    to: new Date(historyDefaultValues.to).toISOString(),
+    granularity: historyDefaultValues.granularity,
+  }));
+  const historyForm = useForm({
+    defaultValues: historyDefaultValues,
+    validators: { onChange: metricsHistoryFormSchema },
+    onSubmit: ({ formApi, value }) => {
+      setRange({
+        from: new Date(value.from).toISOString(),
+        to: new Date(value.to).toISOString(),
+        granularity: value.granularity,
+      });
+      formApi.reset(value, { keepDefaultValues: true });
+    },
+  });
+  const historyQuery = useQuery({
+    queryKey: [
+      'system-metrics',
+      range.from,
+      range.to,
+      range.granularity,
+      locale,
+    ],
+    queryFn: () =>
+      getSystemMetricsHistory(range.from, range.to, range.granularity, locale),
+    enabled: Boolean(range.from && range.to),
+  });
+  const oldestAvailableAt =
+    historyQuery.data?.oldestAvailableAt ??
+    historyQuery.data?.metrics[0]?.capturedAt;
+  const minimumHistoryFrom = oldestAvailableAt
+    ? dateTimeLocalValue(new Date(oldestAvailableAt))
+    : undefined;
+
+  useLayoutEffect(() => {
+    if (!oldestAvailableAt) return;
+    const oldest = new Date(oldestAvailableAt);
+    const selectedFrom = new Date(range.from);
+    if (Number.isNaN(oldest.getTime()) || selectedFrom >= oldest) return;
+    const selectedTo = new Date(range.to);
+    const nextTo =
+      selectedTo > oldest ? selectedTo : new Date(oldest.getTime() + 1_000);
+    historyForm.reset(
+      {
+        from: dateTimeLocalValue(oldest),
+        to: dateTimeLocalValue(nextTo),
+        granularity: range.granularity,
+      },
+      { keepDefaultValues: true },
+    );
+    setRange({
+      from: oldest.toISOString(),
+      to: nextTo.toISOString(),
+      granularity: range.granularity,
+    });
+  }, [historyForm, oldestAvailableAt, range.from, range.granularity, range.to]);
 
   return (
     <div className="mt-5 grid gap-3" aria-live="polite">
@@ -1643,11 +1727,407 @@ function SystemOverviewPanel({
         </Card>
       </div>
 
+      <Card>
+        <Card.Header>
+          <Card.Title>{t('system.historyTitle')}</Card.Title>
+          <Card.Description>{t('system.historyDescription')}</Card.Description>
+        </Card.Header>
+        <Card.Content className="grid gap-4">
+          <Form
+            className="flex flex-wrap items-end gap-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void historyForm.handleSubmit();
+            }}
+          >
+            <historyForm.Field name="from">
+              {(field) => (
+                <TextField
+                  fullWidth
+                  isInvalid={field.state.meta.errors.length > 0}
+                >
+                  <Label>{t('system.historyFrom')}</Label>
+                  <Input
+                    min={minimumHistoryFrom}
+                    onChange={(event) => field.handleChange(event.target.value)}
+                    step="1"
+                    type="datetime-local"
+                    value={
+                      minimumHistoryFrom &&
+                      field.state.value < minimumHistoryFrom
+                        ? minimumHistoryFrom
+                        : field.state.value
+                    }
+                  />
+                </TextField>
+              )}
+            </historyForm.Field>
+            <historyForm.Field name="to">
+              {(field) => (
+                <TextField
+                  fullWidth
+                  isInvalid={field.state.meta.errors.length > 0}
+                >
+                  <Label>{t('system.historyTo')}</Label>
+                  <Input
+                    onChange={(event) => field.handleChange(event.target.value)}
+                    step="1"
+                    type="datetime-local"
+                    value={field.state.value}
+                  />
+                  <FieldError>{t('system.historyRangeInvalid')}</FieldError>
+                </TextField>
+              )}
+            </historyForm.Field>
+            <historyForm.Field name="granularity">
+              {(field) => (
+                <Select
+                  aria-label={t('system.historyGranularity')}
+                  className="w-44"
+                  onSelectionChange={(key) =>
+                    field.handleChange(
+                      key as SystemMetricsHistory['granularity'],
+                    )
+                  }
+                  selectedKey={field.state.value}
+                >
+                  <Select.Trigger>
+                    <Select.Value />
+                    <Select.Indicator />
+                  </Select.Trigger>
+                  <Select.Popover>
+                    <ListBox>
+                      <ListBox.Item id="second">
+                        {t('system.historyGranularitySecond')}
+                        <ListBox.ItemIndicator />
+                      </ListBox.Item>
+                      <ListBox.Item id="minute">
+                        {t('system.historyGranularityMinute')}
+                        <ListBox.ItemIndicator />
+                      </ListBox.Item>
+                      <ListBox.Item id="hour">
+                        {t('system.historyGranularityHour')}
+                        <ListBox.ItemIndicator />
+                      </ListBox.Item>
+                    </ListBox>
+                  </Select.Popover>
+                </Select>
+              )}
+            </historyForm.Field>
+            <historyForm.Subscribe
+              selector={(state) => [state.canSubmit, state.isDirty]}
+            >
+              {([canSubmit, isDirty]) => (
+                <Button
+                  isDisabled={!canSubmit || !isDirty}
+                  type="submit"
+                  variant="outline"
+                >
+                  {t('system.historyApply')}
+                </Button>
+              )}
+            </historyForm.Subscribe>
+          </Form>
+          {historyQuery.isPending ? (
+            <p className="m-0 text-sm text-[var(--muted)]">
+              {t('system.historyLoading')}
+            </p>
+          ) : null}
+          {historyQuery.isError ? (
+            <Alert status="danger">
+              <Alert.Content>
+                <Alert.Description>
+                  {publicErrorMessage(
+                    historyQuery.error,
+                    t('system.historyUnavailable'),
+                  )}
+                </Alert.Description>
+              </Alert.Content>
+            </Alert>
+          ) : null}
+          {historyQuery.data ? (
+            <MetricsHistoryChart
+              from={range.from}
+              history={historyQuery.data}
+              locale={locale}
+              to={range.to}
+            />
+          ) : null}
+        </Card.Content>
+      </Card>
+
       <p className="m-0 text-sm text-[var(--muted)]">
         {t('system.updatedAt', { date: formatDate(system.capturedAt, locale) })}
       </p>
     </div>
   );
+}
+
+function MetricsHistoryChart({
+  from,
+  history,
+  locale,
+  to,
+}: {
+  from: string;
+  history: SystemMetricsHistory;
+  locale: string;
+  to: string;
+}) {
+  const { t } = useTranslation();
+  const [hoveredAt, setHoveredAt] = useState<number | null>(null);
+  if (history.metrics.length === 0) {
+    return (
+      <p className="m-0 text-sm text-[var(--muted)]">
+        {t('system.historyEmpty')}
+      </p>
+    );
+  }
+
+  const startedAt = new Date(from).getTime();
+  const endedAt = new Date(to).getTime();
+  const cpu = history.metrics.map((metric) => ({
+    at: new Date(metric.capturedAt).getTime(),
+    value: metric.cpuUsagePercent,
+  }));
+  const memory = history.metrics
+    .filter((metric) => metric.memoryTotalBytes > 0)
+    .map((metric) => ({
+      at: new Date(metric.capturedAt).getTime(),
+      value: (metric.memoryUsedBytes / metric.memoryTotalBytes) * 100,
+    }));
+  const maximumGap = metricGranularityMilliseconds(history.granularity) * 2;
+  const cpuSegments = chartSegments(cpu, startedAt, endedAt, maximumGap);
+  const memorySegments = chartSegments(memory, startedAt, endedAt, maximumGap);
+  const hovered =
+    hoveredAt === null
+      ? undefined
+      : history.metrics.reduce((closest, metric) =>
+          Math.abs(new Date(metric.capturedAt).getTime() - hoveredAt) <
+          Math.abs(new Date(closest.capturedAt).getTime() - hoveredAt)
+            ? metric
+            : closest,
+        );
+  const ticks = Array.from(
+    { length: 5 },
+    (_, index) => startedAt + ((endedAt - startedAt) * index) / 4,
+  );
+
+  return (
+    <div className="grid gap-3">
+      <div className="flex flex-wrap gap-4 text-sm">
+        <span className="flex items-center gap-2">
+          <i className="size-2 rounded-full bg-accent" />
+          {t('system.cpu')}
+        </span>
+        <span className="flex items-center gap-2">
+          <i className="size-2 rounded-full bg-success" />
+          {t('system.memory')}
+        </span>
+      </div>
+      <svg
+        aria-label={t('system.historyChartLabel')}
+        className="aspect-[720/260] w-full overflow-visible"
+        onPointerLeave={() => setHoveredAt(null)}
+        onPointerMove={(event) => {
+          const bounds = event.currentTarget.getBoundingClientRect();
+          const viewBoxX = ((event.clientX - bounds.left) / bounds.width) * 720;
+          const plotX = Math.min(704, Math.max(44, viewBoxX));
+          const ratio = Math.min(1, Math.max(0, (plotX - 44) / 660));
+          setHoveredAt(startedAt + ratio * (endedAt - startedAt));
+        }}
+        role="img"
+        viewBox="0 0 720 260"
+      >
+        {[0, 25, 50, 75, 100].map((value) => {
+          const y = 16 + (1 - value / 100) * 192;
+          return (
+            <g key={value}>
+              <line
+                stroke="var(--separator)"
+                strokeDasharray="3 4"
+                x1="44"
+                x2="704"
+                y1={y}
+                y2={y}
+              />
+              <text
+                fill="var(--muted)"
+                fontSize="11"
+                textAnchor="end"
+                x="36"
+                y={y + 4}
+              >
+                {value}%
+              </text>
+            </g>
+          );
+        })}
+        {cpuSegments.map((path) => (
+          <path
+            d={path}
+            fill="none"
+            key={path}
+            stroke="var(--accent)"
+            strokeLinecap="round"
+            strokeWidth="2.5"
+          />
+        ))}
+        {memorySegments.map((path) => (
+          <path
+            d={path}
+            fill="none"
+            key={path}
+            stroke="var(--success)"
+            strokeLinecap="round"
+            strokeWidth="2.5"
+          />
+        ))}
+        {ticks.map((tick) => (
+          <text
+            fill="var(--muted)"
+            fontSize="11"
+            key={tick}
+            textAnchor="middle"
+            x={chartX(tick, startedAt, endedAt)}
+            y="232"
+          >
+            {formatChartTick(tick, locale)}
+          </text>
+        ))}
+        <rect fill="transparent" height="208" width="660" x="44" y="0" />
+        {hovered ? (
+          <ChartTooltip
+            endedAt={endedAt}
+            locale={locale}
+            metric={hovered}
+            startedAt={startedAt}
+          />
+        ) : null}
+      </svg>
+    </div>
+  );
+}
+
+function ChartTooltip({
+  endedAt,
+  locale,
+  metric,
+  startedAt,
+}: {
+  endedAt: number;
+  locale: string;
+  metric: SystemMetricsHistory['metrics'][number];
+  startedAt: number;
+}) {
+  const at = new Date(metric.capturedAt).getTime();
+  const x = chartX(at, startedAt, endedAt);
+  const memoryUsage =
+    metric.memoryTotalBytes > 0
+      ? (metric.memoryUsedBytes / metric.memoryTotalBytes) * 100
+      : 0;
+  const tooltipX = Math.min(510, Math.max(44, x + 10));
+  return (
+    <g pointerEvents="none">
+      <line
+        stroke="var(--muted)"
+        strokeDasharray="3 3"
+        x1={x}
+        x2={x}
+        y1="16"
+        y2="208"
+      />
+      <circle
+        cx={x}
+        cy={chartY(metric.cpuUsagePercent)}
+        fill="var(--accent)"
+        r="4"
+      />
+      {metric.memoryTotalBytes > 0 ? (
+        <circle cx={x} cy={chartY(memoryUsage)} fill="var(--success)" r="4" />
+      ) : null}
+      <rect
+        fill="var(--overlay)"
+        height="66"
+        rx="6"
+        stroke="var(--border)"
+        width="170"
+        x={tooltipX}
+        y="18"
+      />
+      <text fill="var(--foreground)" fontSize="11" x={tooltipX + 8} y="38">
+        {formatDate(metric.capturedAt, locale)}
+      </text>
+      <text fill="var(--accent)" fontSize="11" x={tooltipX + 8} y="56">
+        CPU {metric.cpuUsagePercent.toFixed(1)}%
+      </text>
+      <text fill="var(--success)" fontSize="11" x={tooltipX + 8} y="74">
+        Memory {formatBytes(metric.memoryUsedBytes, locale)} (
+        {memoryUsage.toFixed(1)}%)
+      </text>
+    </g>
+  );
+}
+
+function metricGranularityMilliseconds(
+  granularity: SystemMetricsHistory['granularity'],
+) {
+  if (granularity === 'second') return 1000;
+  if (granularity === 'hour') return 60 * 60 * 1000;
+  return 60 * 1000;
+}
+
+function chartX(at: number, startedAt: number, endedAt: number) {
+  if (endedAt <= startedAt) return 44;
+  const x = 44 + ((at - startedAt) / (endedAt - startedAt)) * 660;
+  return Math.min(704, Math.max(44, x));
+}
+
+function chartY(value: number) {
+  return 16 + (1 - Math.min(100, Math.max(0, value)) / 100) * 192;
+}
+
+function formatChartTick(at: number, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(at));
+}
+
+function chartSegments(
+  points: { at: number; value: number }[],
+  startedAt: number,
+  endedAt: number,
+  maximumGap: number,
+) {
+  const segments: string[] = [];
+  let segment: string[] = [];
+  let previousAt: number | undefined;
+  for (const point of points) {
+    if (previousAt !== undefined && point.at - previousAt > maximumGap) {
+      if (segment.length > 0) segments.push(segment.join(' '));
+      segment = [];
+    }
+    const x = chartX(point.at, startedAt, endedAt);
+    const y = chartY(point.value);
+    segment.push(`${segment.length === 0 ? 'M' : 'L'} ${x} ${y}`);
+    previousAt = point.at;
+  }
+  if (segment.length > 0) segments.push(segment.join(' '));
+  return segments;
+}
+
+function daysAgo(days: number) {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return date;
+}
+
+function dateTimeLocalValue(date: Date) {
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
 function formatDate(value: string, locale: string) {

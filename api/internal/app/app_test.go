@@ -41,6 +41,16 @@ func (systemOverviewStub) Overview(context.Context) (system.Overview, error) {
 	return system.Overview{}, nil
 }
 
+type systemMetricHistoryStub struct{}
+
+func (systemMetricHistoryStub) ListSystemMetrics(context.Context, time.Time, time.Time, system.MetricGranularity) ([]system.MetricSample, error) {
+	return nil, nil
+}
+
+func (systemMetricHistoryStub) OldestSystemMetric(context.Context) (time.Time, bool, error) {
+	return time.Time{}, false, nil
+}
+
 type monitoringSettingsStub struct{}
 
 func (monitoringSettingsStub) GetSystemMonitoringSettings(context.Context) (system.MonitoringSettings, error) {
@@ -90,6 +100,7 @@ func TestAPIRoutesStayUnderAPIPrefix(t *testing.T) {
 		SetupStatus:          setupStatusStub{configured: false},
 		Authenticator:        authenticatorStub{},
 		SystemOverview:       systemOverviewStub{},
+		SystemMetricHistory:  systemMetricHistoryStub{},
 		SessionInventory:     sessionInventoryStub{},
 		BackupManager:        backupManagerStub{},
 		ControlUsers:         controlUsersStub{},

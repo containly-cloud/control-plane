@@ -9,9 +9,8 @@ import (
 
 func (s *Store) GetSystemMonitoringSettings(ctx context.Context) (system.MonitoringSettings, error) {
 	settings := system.DefaultMonitoringSettings()
-	err := s.db.QueryRowContext(ctx, `SELECT enabled, interval_seconds, retention_days FROM system_monitoring_settings WHERE id=1`).Scan(
+	err := s.db.QueryRowContext(ctx, `SELECT enabled, retention_days FROM system_monitoring_settings WHERE id=1`).Scan(
 		&settings.Enabled,
-		&settings.IntervalSeconds,
 		&settings.RetentionDays,
 	)
 	if err != nil {
@@ -25,9 +24,8 @@ func (s *Store) SetSystemMonitoringSettings(ctx context.Context, settings system
 		return fmt.Errorf("invalid system monitoring settings")
 	}
 	_, err := s.db.ExecContext(ctx,
-		`UPDATE system_monitoring_settings SET enabled=?, interval_seconds=?, retention_days=? WHERE id=1`,
+		`UPDATE system_monitoring_settings SET enabled=?, retention_days=? WHERE id=1`,
 		settings.Enabled,
-		settings.IntervalSeconds,
 		settings.RetentionDays,
 	)
 	if err != nil {

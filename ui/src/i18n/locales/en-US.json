@@ -57,7 +57,21 @@
     "publicIp": "Public IP",
     "networkInterfaces": "Interfaces",
     "updatedAt": "Updated {{date}}",
-    "notAvailable": "Unavailable"
+    "notAvailable": "Unavailable",
+    "historyTitle": "Metric history",
+    "historyDescription": "Compare CPU and memory usage over a selected period.",
+    "historyFrom": "From",
+    "historyTo": "To",
+    "historyApply": "Apply period",
+    "historyRangeInvalid": "Choose an end date that is on or after the start date.",
+    "historyLoading": "Loading metric history…",
+    "historyUnavailable": "Unable to load metric history.",
+    "historyEmpty": "No metrics were collected during this period.",
+    "historyChartLabel": "CPU and memory usage over the selected period",
+    "historyGranularity": "Chart granularity",
+    "historyGranularitySecond": "Every second",
+    "historyGranularityMinute": "Every minute",
+    "historyGranularityHour": "Every hour"
   },
   "workspace": {
     "navigationLabel": "Main navigation"
@@ -68,8 +82,6 @@
     "monitoringTitle": "System monitoring",
     "monitoringDescription": "Collection can be stopped and started without restarting the server.",
     "monitoringEnabled": "Collect and store system metrics",
-    "intervalLabel": "Collection interval (seconds)",
-    "intervalValidation": "Use an interval between 5 and 86,400 seconds.",
     "retentionLabel": "Metric retention (days)",
     "retentionValidation": "Use a retention period between 1 and 3,650 days.",
     "storageNotice": "Turning collection off stops new metric records and helps limit database storage use.",

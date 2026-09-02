@@ -25,6 +25,7 @@ const (
 	SystemOverviewUnavailable  Key = "system_overview_unavailable"
 	SettingsUnavailable        Key = "settings_unavailable"
 	InvalidMonitoringSettings  Key = "invalid_monitoring_settings"
+	InvalidMetricRange         Key = "invalid_metric_range"
 	AccountSessionsUnavailable Key = "account_sessions_unavailable"
 	BackupsUnavailable         Key = "backups_unavailable"
 	BackupCreationFailed       Key = "backup_creation_failed"
@@ -51,6 +52,7 @@ var messages = map[Locale]map[Key]string{
 		SystemOverviewUnavailable:  "Não foi possível carregar as informações do sistema.",
 		SettingsUnavailable:        "Não foi possível carregar as configurações.",
 		InvalidMonitoringSettings:  "As configurações de monitoramento são inválidas.",
+		InvalidMetricRange:         "O período das métricas é inválido.",
 		AccountSessionsUnavailable: "Não foi possível carregar as sessões conectadas.",
 		BackupsUnavailable:         "Não foi possível carregar os backups.",
 		BackupCreationFailed:       "Não foi possível criar o backup.",
@@ -75,6 +77,7 @@ var messages = map[Locale]map[Key]string{
 		SystemOverviewUnavailable:  "Unable to load system information.",
 		SettingsUnavailable:        "Unable to load settings.",
 		InvalidMonitoringSettings:  "The monitoring settings are invalid.",
+		InvalidMetricRange:         "The metric date range is invalid.",
 		AccountSessionsUnavailable: "Unable to load connected sessions.",
 		BackupsUnavailable:         "Unable to load backups.",
 		BackupCreationFailed:       "Unable to create the backup.",

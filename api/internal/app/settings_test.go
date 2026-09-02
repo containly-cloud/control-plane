@@ -53,7 +53,7 @@ func TestMonitoringSettingsRequireManagementPermission(t *testing.T) {
 		settings:      store,
 		monitor:       monitor,
 	}
-	request := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(`{"enabled":false,"intervalSeconds":60,"retentionDays":30}`))
+	request := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(`{"enabled":false,"retentionDays":30}`))
 	response := httptest.NewRecorder()
 
 	handler.updateMonitoring(response, request)
@@ -74,7 +74,7 @@ func TestMonitoringSettingsApplyWithoutServerRestart(t *testing.T) {
 		settings:      store,
 		monitor:       monitor,
 	}
-	request := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(`{"enabled":false,"intervalSeconds":60,"retentionDays":30}`))
+	request := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(`{"enabled":false,"retentionDays":30}`))
 	response := httptest.NewRecorder()
 
 	handler.updateMonitoring(response, request)
@@ -82,7 +82,7 @@ func TestMonitoringSettingsApplyWithoutServerRestart(t *testing.T) {
 	if response.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
 	}
-	want := system.MonitoringSettings{Enabled: false, IntervalSeconds: 60, RetentionDays: 30}
+	want := system.MonitoringSettings{Enabled: false, RetentionDays: 30}
 	if store.settings != want || monitor.settings != want || monitor.calls != 1 {
 		t.Errorf("settings were not applied immediately: store=%+v monitor=%+v calls=%d", store.settings, monitor.settings, monitor.calls)
 	}
@@ -96,7 +96,7 @@ func TestDisablingMonitoringCanClearSavedMetrics(t *testing.T) {
 		settings:      store,
 		monitor:       monitor,
 	}
-	request := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(`{"enabled":false,"intervalSeconds":60,"retentionDays":30,"clearSavedMetrics":true}`))
+	request := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(`{"enabled":false,"retentionDays":30,"clearSavedMetrics":true}`))
 	response := httptest.NewRecorder()
 
 	handler.updateMonitoring(response, request)

@@ -11,6 +11,7 @@ import (
 type MetricStore interface {
 	SaveSystemMetric(ctx context.Context, capturedAt time.Time, cpuUsage float64, memoryTotal, memoryUsed uint64) error
 	PruneSystemMetrics(ctx context.Context, before time.Time) error
+	LatestSystemMetric(ctx context.Context) (MetricSample, bool, error)
 }
 
 type OverviewCollector interface {
@@ -76,7 +77,7 @@ func (m *Monitor) Configure(settings MonitoringSettings) {
 	}
 	go func() {
 		m.capture(ctx, settings.RetentionDays)
-		ticker := time.NewTicker(time.Duration(settings.IntervalSeconds) * time.Second)
+		ticker := time.NewTicker(CollectionIntervalSeconds * time.Second)
 		defer ticker.Stop()
 		for {
 			select {
@@ -91,12 +92,24 @@ func (m *Monitor) Configure(settings MonitoringSettings) {
 
 func (m *Monitor) Overview(ctx context.Context) (Overview, error) {
 	m.mu.RLock()
-	if m.hasValue && m.enabled {
-		overview := m.current
-		m.mu.RUnlock()
-		return overview, nil
-	}
+	current := m.current
+	hasValue := m.hasValue
+	enabled := m.enabled
 	m.mu.RUnlock()
+	if hasValue && enabled {
+		sample, found, err := m.storage.LatestSystemMetric(ctx)
+		if err != nil {
+			return Overview{}, err
+		}
+		if found {
+			current.CapturedAt = sample.CapturedAt
+			current.CPU.UsagePercent = sample.CPUUsagePercent
+			current.Memory.TotalBytes = sample.MemoryTotalBytes
+			current.Memory.UsedBytes = sample.MemoryUsedBytes
+			current.Memory.AvailableBytes = sample.MemoryTotalBytes - min(sample.MemoryTotalBytes, sample.MemoryUsedBytes)
+		}
+		return current, nil
+	}
 
 	// With background collection disabled, always serve a fresh live reading
 	// without persisting it. This keeps refreshes current while metric storage

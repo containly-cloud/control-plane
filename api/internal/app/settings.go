@@ -47,7 +47,6 @@ func (h settingsHandler) updateMonitoring(w http.ResponseWriter, r *http.Request
 	defer r.Body.Close()
 	var input struct {
 		Enabled           bool `json:"enabled"`
-		IntervalSeconds   int  `json:"intervalSeconds"`
 		RetentionDays     int  `json:"retentionDays"`
 		ClearSavedMetrics bool `json:"clearSavedMetrics"`
 	}
@@ -56,9 +55,8 @@ func (h settingsHandler) updateMonitoring(w http.ResponseWriter, r *http.Request
 		return
 	}
 	settings := system.MonitoringSettings{
-		Enabled:         input.Enabled,
-		IntervalSeconds: input.IntervalSeconds,
-		RetentionDays:   input.RetentionDays,
+		Enabled:       input.Enabled,
+		RetentionDays: input.RetentionDays,
 	}
 	if !system.ValidMonitoringSettings(settings) || (input.ClearSavedMetrics && input.Enabled) {
 		writeError(w, r, http.StatusBadRequest, localization.InvalidMonitoringSettings)

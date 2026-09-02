@@ -54,6 +54,7 @@ func main() {
 		SetupStatus:          store,
 		Authenticator:        identity.NewAuthenticator(store),
 		SystemOverview:       monitor,
+		SystemMetricHistory:  store,
 		SessionInventory:     store,
 		BackupManager:        store,
 		ControlUsers:         store,

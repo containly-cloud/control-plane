@@ -32,6 +32,9 @@ func (s *metricStoreStub) SaveSystemMetric(context.Context, time.Time, float64, 
 	return nil
 }
 func (*metricStoreStub) PruneSystemMetrics(context.Context, time.Time) error { return nil }
+func (*metricStoreStub) LatestSystemMetric(context.Context) (MetricSample, bool, error) {
+	return MetricSample{}, false, nil
+}
 
 func TestMonitorCanBeStoppedAndStartedWithoutRestart(t *testing.T) {
 	collector := &collectorStub{seen: make(chan struct{}, 2)}
@@ -39,21 +42,21 @@ func TestMonitorCanBeStoppedAndStartedWithoutRestart(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	monitor.Start(ctx, MonitoringSettings{Enabled: false, IntervalSeconds: 5, RetentionDays: 30})
+	monitor.Start(ctx, MonitoringSettings{Enabled: false, RetentionDays: 30})
 	select {
 	case <-collector.seen:
 		t.Fatal("disabled monitoring collected a metric")
 	case <-time.After(20 * time.Millisecond):
 	}
 
-	monitor.Configure(MonitoringSettings{Enabled: true, IntervalSeconds: 5, RetentionDays: 30})
+	monitor.Configure(MonitoringSettings{Enabled: true, RetentionDays: 30})
 	select {
 	case <-collector.seen:
 	case <-time.After(time.Second):
 		t.Fatal("enabled monitoring did not collect a metric")
 	}
 
-	monitor.Configure(MonitoringSettings{Enabled: false, IntervalSeconds: 5, RetentionDays: 30})
+	monitor.Configure(MonitoringSettings{Enabled: false, RetentionDays: 30})
 	collector.mu.Lock()
 	calls := collector.calls
 	collector.mu.Unlock()
@@ -68,7 +71,7 @@ func TestDisabledMonitorServesLiveOverviewWithoutSavingMetrics(t *testing.T) {
 	monitor := NewMonitor(collector, store, slog.New(slog.NewTextHandler(testWriter{t}, nil)))
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	monitor.Start(ctx, MonitoringSettings{Enabled: false, IntervalSeconds: 5, RetentionDays: 30})
+	monitor.Start(ctx, MonitoringSettings{Enabled: false, RetentionDays: 30})
 
 	overview, err := monitor.Overview(context.Background())
 

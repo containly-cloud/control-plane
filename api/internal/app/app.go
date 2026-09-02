@@ -40,6 +40,7 @@ type Dependencies struct {
 	SetupStatus          SetupStatus
 	Authenticator        Authenticator
 	SystemOverview       SystemOverview
+	SystemMetricHistory  SystemMetricHistory
 	SessionInventory     SessionInventory
 	BackupManager        BackupManager
 	ControlUsers         ControlUserManager
@@ -49,13 +50,13 @@ type Dependencies struct {
 }
 
 func New(dependencies Dependencies) (http.Handler, error) {
-	if dependencies.Logger == nil || dependencies.RootCreator == nil || dependencies.SetupStatus == nil || dependencies.Authenticator == nil || dependencies.SystemOverview == nil || dependencies.SessionInventory == nil || dependencies.BackupManager == nil || dependencies.ControlUsers == nil || dependencies.MonitoringSettings == nil || dependencies.MonitoringController == nil || dependencies.WebHandler == nil {
+	if dependencies.Logger == nil || dependencies.RootCreator == nil || dependencies.SetupStatus == nil || dependencies.Authenticator == nil || dependencies.SystemOverview == nil || dependencies.SystemMetricHistory == nil || dependencies.SessionInventory == nil || dependencies.BackupManager == nil || dependencies.ControlUsers == nil || dependencies.MonitoringSettings == nil || dependencies.MonitoringController == nil || dependencies.WebHandler == nil {
 		return nil, errors.New("application dependencies must not be nil")
 	}
 
 	handler := setupHandler{rootCreator: dependencies.RootCreator, setupStatus: dependencies.SetupStatus}
 	auth := authHandler{authenticator: dependencies.Authenticator}
-	system := systemHandler{authenticator: dependencies.Authenticator, overview: dependencies.SystemOverview}
+	system := systemHandler{authenticator: dependencies.Authenticator, overview: dependencies.SystemOverview, history: dependencies.SystemMetricHistory}
 	account := accountHandler{authenticator: dependencies.Authenticator, sessions: dependencies.SessionInventory}
 	backups := backupHandler{authenticator: dependencies.Authenticator, backups: dependencies.BackupManager}
 	users := usersHandler{authenticator: dependencies.Authenticator, users: dependencies.ControlUsers}
@@ -71,6 +72,7 @@ func New(dependencies Dependencies) (http.Handler, error) {
 		apiRouter.Get("/v1/auth/session", auth.session)
 		apiRouter.Post("/v1/auth/logout", auth.logout)
 		apiRouter.Get("/v1/system/overview", system.overviewResponse)
+		apiRouter.Get("/v1/system/metrics", system.metricsResponse)
 		apiRouter.Get("/v1/account/sessions", account.sessionsResponse)
 		apiRouter.Get("/v1/backups", backups.list)
 		apiRouter.Post("/v1/backups", backups.create)
